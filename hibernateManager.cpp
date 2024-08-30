@@ -9,37 +9,59 @@ void HibernateManager::configBaud()
 
 void HibernateManager::configPin()
 {
-    pinMode(WAKEUP_PIN, INPUT); // Configura el pin de despertador como entrada
+    pinMode(WAKEUP_PIN, INPUT); // Set the wakeup pin as input
 }
 
 void HibernateManager::enterToDeepSleep()
 {
     esp_sleep_enable_ext0_wakeup(WAKEUP_PIN, 1);  // 1 = high level. Configure the ESP32 to wake up with a high signal in WAKEUP_PIN
-    Serial.println("enter to deep sleep");
-    esp_deep_sleep_start(); // Entra en deep sleep
-    Serial.println("this message should not be displayed");
+    Serial.println("enter to deep sleep mode");
+    esp_deep_sleep_start(); // enter to deep sleep mode 
+    Serial.println("this message should not be displayed in deep sleep mode");
 }
 
 void HibernateManager::enterToLightSleep()
 {
     esp_sleep_enable_ext0_wakeup(WAKEUP_PIN, 1); // 1 = high level. Configure the ESP32 to wake up with a high signal in WAKEUP_PIN
-    Serial.println("enter to light sleep");
-    esp_light_sleep_start(); 
+    Serial.println("enter to light sleep mode");
+    globalInstance->deactivateTickerToSleep();
+    globalInstance->desactivateTickerToConsultServer();
+    delay(100);
+    esp_light_sleep_start(); // enter to light sleep mode
     Serial.println("this message may possibly be displayed in light sleep mode");
-    globalInstance->deactivateTicker();
+    globalInstance->activateTickerToSleep();
+    globalInstance->activateTickerToConsultServer();
 }
 
-void HibernateManager::activateTicker()
+void HibernateManager::activateTickerToSleep()
 {
     if(!isActivate)
     {
         isActivate = true;
-        tickerSleep.once_ms(10000, enterToDeepSleep);
-        // tickerSleep.attach_ms(10000, enterToLightSleep);
+        // tickerSleep.once_ms(10000, enterToDeepSleep);
+        tickerSleep.attach_ms(15000, enterToLightSleep);
     }
 }
 
-void HibernateManager::deactivateTicker()
+void HibernateManager::activateTickerToConsultServer()
+{
+    if(!isActivate2)
+    {
+        isActivate2 = true;
+        tickerConsult.attach_ms(200, consult);
+    }
+}
+
+void HibernateManager::desactivateTickerToConsultServer()
+{
+    if(isActivate2)
+    {
+        isActivate2 = false;
+        tickerConsult.detach();
+    }
+}
+
+void HibernateManager::deactivateTickerToSleep()
 {
     if(isActivate)
     {
@@ -48,16 +70,54 @@ void HibernateManager::deactivateTicker()
     }
 }
 
+void HibernateManager::thereIsActivity()
+{
+    deactivateTickerToSleep();
+    activateTickerToSleep(); // By default it should remain activated if you go through the "thereIsActivity" method
+}
+
+void HibernateManager::getSerialData()
+{
+    while (Serial.available() > 0) 
+    {
+        char c = Serial.read();
+        dataSerial += c;
+        delay(3);
+    }
+
+    if (!dataSerial.empty()) 
+    {
+        if(dataSerial.find("sleep") != std::string::npos)
+        {
+            enterToLightSleep();
+        }
+        else if(dataSerial.find("show") != std::string::npos)
+        {
+            Serial.println("show message");
+        }
+        dataSerial = std::string();
+    }
+}
+
+void HibernateManager::consult()
+{
+    globalInstance->connectManager.consultMessage();
+}
+
 void HibernateManager::start()
 {
     globalInstance = this;
     configBaud();
     configPin();
-    activateTicker();
+    connectManager.instantiateWifi();
+    connectManager.configWifiConnection();
+    activateTickerToSleep();
+    activateTickerToConsultServer();
 }
 
 void HibernateManager::loop()
 {
+    getSerialData();
     Serial.println("program executing");
-    delay(1000); // Add a small delay to avoid showing the message too many times
+    // delay(1000); // Add a small delay to avoid showing the message too many times
 }
