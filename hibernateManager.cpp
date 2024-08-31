@@ -16,6 +16,8 @@ void HibernateManager::enterToDeepSleep()
 {
     esp_sleep_enable_ext0_wakeup(WAKEUP_PIN, 1);  // 1 = high level. Configure the ESP32 to wake up with a high signal in WAKEUP_PIN
     Serial.println("enter to deep sleep mode");
+    globalInstance->deactivateTickerToSleep();
+    globalInstance->desactivateTickerToConsultServer();
     esp_deep_sleep_start(); // enter to deep sleep mode 
     Serial.println("this message should not be displayed in deep sleep mode");
 }
@@ -38,8 +40,8 @@ void HibernateManager::activateTickerToSleep()
     if(!isActivate)
     {
         isActivate = true;
-        // tickerSleep.once_ms(10000, enterToDeepSleep);
-        tickerSleep.attach_ms(15000, enterToLightSleep);
+        tickerSleep.attach_ms(60000, enterToDeepSleep);
+        // tickerSleep.attach_ms(15000, enterToLightSleep);
     }
 }
 
@@ -89,7 +91,7 @@ void HibernateManager::getSerialData()
     {
         if(dataSerial.find("sleep") != std::string::npos)
         {
-            enterToLightSleep();
+            enterToDeepSleep();
         }
         else if(dataSerial.find("show") != std::string::npos)
         {
@@ -110,9 +112,11 @@ void HibernateManager::start()
     configBaud();
     configPin();
     connectManager.instantiateWifi();
-    connectManager.configWifiConnection();
+    connectManager.configAccessPoint(); // for access point
+    // connectManager.configStationMode(); // for station mode
     activateTickerToSleep();
-    activateTickerToConsultServer();
+    // activateTickerToConsultServer(); // for station mode
+    delay(1000);
 }
 
 void HibernateManager::loop()

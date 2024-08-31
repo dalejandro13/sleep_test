@@ -9,13 +9,14 @@
 class ConnectManager{
     public:
         void instantiateWifi();
-        void configWifiConnection();
+        void configStationMode();
         void consultMessage();
-
+        void disconnectWifi();
+        void configAccessPoint();
     private:
         WifiManager *wifiManager;
         void checkConnection();
-        void disconnectWifi();
+        uint8_t countToDisconnect = 0;
 };
 
 

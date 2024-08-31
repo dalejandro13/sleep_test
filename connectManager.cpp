@@ -2,19 +2,14 @@
 
 void ConnectManager::instantiateWifi()
 {
-    wifiManager = new WifiManager();
+  wifiManager = new WifiManager();
 }
 
-void ConnectManager::configWifiConnection()
+void ConnectManager::configStationMode()
 {
-    disconnectWifi();
-    wifiManager->connect(REMOTE_SSID, REMOTE_PASS);
-    checkConnection();
-}
-
-void ConnectManager::disconnectWifi()
-{
-  wifiManager->disconnect();
+  disconnectWifi();
+  wifiManager->connect(REMOTE_SSID, REMOTE_PASS);
+  checkConnection();
 }
 
 void ConnectManager::checkConnection()
@@ -23,9 +18,21 @@ void ConnectManager::checkConnection()
   {
     Serial.print(".");
     delay(1000);
+    countToDisconnect++;
+    if(countToDisconnect >= 20)
+    {
+      countToDisconnect = 0;
+      Serial.println("can't connect to the network");
+      return;
+    }
   }
-  Serial.println("");
+  countToDisconnect = 0;
   Serial.println("is already connected");
+}
+
+void ConnectManager::disconnectWifi()
+{
+  wifiManager->disconnect();
 }
 
 void ConnectManager::consultMessage()
@@ -35,12 +42,17 @@ void ConnectManager::consultMessage()
     uint32_t httpResponseCode = http.GET();
     if (httpResponseCode == HTTP_CODE_OK)
     {
-        std::string payload = std::string(http.getString().c_str());
-        Serial.printf("Respuesta: %s\n", payload.c_str());
+      std::string payload = std::string(http.getString().c_str());
+      Serial.printf("Respuesta: %s\n", payload.c_str());
     }
     else
     {
-        Serial.println("no se puede consultar");
+      Serial.println("no se puede consultar");
     }
     http.end(); // close the connection
+}
+
+void ConnectManager::configAccessPoint()
+{
+  wifiManager->createAP(AP_SSID, AP_PASS);
 }
