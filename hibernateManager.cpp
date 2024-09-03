@@ -33,6 +33,7 @@ void HibernateManager::enterToLightSleep()
     Serial.println("this message may possibly be displayed in light sleep mode");
     globalInstance->activateTickerToSleep();
     globalInstance->activateTickerToConsultServer();
+    Serial.printf("actual counter: %d\n", globalInstance->counter);
 }
 
 void HibernateManager::activateTickerToSleep()
@@ -40,8 +41,8 @@ void HibernateManager::activateTickerToSleep()
     if(!isActivate)
     {
         isActivate = true;
-        tickerSleep.attach_ms(60000, enterToDeepSleep);
-        // tickerSleep.attach_ms(15000, enterToLightSleep);
+        // tickerSleep.attach_ms(60000, enterToDeepSleep);
+        tickerSleep.attach_ms(15000, enterToLightSleep);
     }
 }
 
@@ -50,7 +51,7 @@ void HibernateManager::activateTickerToConsultServer()
     if(!isActivate2)
     {
         isActivate2 = true;
-        tickerConsult.attach_ms(200, consult);
+        tickerConsult.attach_ms(1000, consult);
     }
 }
 
@@ -112,16 +113,20 @@ void HibernateManager::start()
     configBaud();
     configPin();
     connectManager.instantiateWifi();
-    connectManager.configAccessPoint(); // for access point
-    // connectManager.configStationMode(); // for station mode
+    // connectManager.configAccessPoint(); // for access point
+    connectManager.configStationMode(); // for station mode
     activateTickerToSleep();
-    // activateTickerToConsultServer(); // for station mode
+    activateTickerToConsultServer(); // for station mode
     delay(1000);
 }
 
 void HibernateManager::loop()
 {
     getSerialData();
-    Serial.println("program executing");
-    // delay(1000); // Add a small delay to avoid showing the message too many times
+    counter++;
+    Serial.printf("counter1: %d\n", counter);
+    if(counter >= 1000){
+        counter = 0;
+    }
+    delay(1000); // Add a small delay to avoid showing the message too many times
 }

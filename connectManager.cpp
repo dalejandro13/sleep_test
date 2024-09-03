@@ -37,19 +37,19 @@ void ConnectManager::disconnectWifi()
 
 void ConnectManager::consultMessage()
 {
-    HTTPClient http;
-    http.begin(URL_SERVER);
-    uint32_t httpResponseCode = http.GET();
-    if (httpResponseCode == HTTP_CODE_OK)
-    {
-      std::string payload = std::string(http.getString().c_str());
-      Serial.printf("Respuesta: %s\n", payload.c_str());
-    }
-    else
-    {
-      Serial.println("no se puede consultar");
-    }
-    http.end(); // close the connection
+  HTTPClient http;
+  http.begin(URL_SERVER);
+  uint32_t httpResponseCode = http.GET();
+  if (httpResponseCode == HTTP_CODE_OK)
+  {
+    std::string payload = std::string(http.getString().c_str());
+    Serial.printf("Respuesta: %s\n", payload.c_str());
+  }
+  else
+  {
+    Serial.println("no se puede consultar");
+  }
+  http.end(); // close the connection
 }
 
 void ConnectManager::configAccessPoint()

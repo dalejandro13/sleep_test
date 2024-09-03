@@ -14,6 +14,7 @@ class HibernateManager{
         static void enterToDeepSleep();
         static void enterToLightSleep();
         static void consult();
+        uint16_t counter = 0;
 
     private:
         ConnectManager connectManager;
